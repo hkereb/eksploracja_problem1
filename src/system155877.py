@@ -1,12 +1,16 @@
 import csv
 from RatingSystem import RatingSystem
 
-# baseline + genres
+# Baseline + genres
 class MySystem(RatingSystem):
     def __init__(self):
         super().__init__()
+        self._calculate_global_mean()
+        self._load_genres()
+        self._calculate_biases()
+        self._build_genre_profiles()
 
-        # global average
+    def _calculate_global_mean(self):
         total_sum = 0
         total_count = 0
         for user_obj in self.users.values():
@@ -16,10 +20,20 @@ class MySystem(RatingSystem):
 
         self.global_mean = total_sum / total_count if total_count > 0 else 2.5
 
-        # loading genres via separate method
-        self._load_genres()
+    def _load_genres(self):
+        self.movie_genres = {}
+        try:
+            with open('../data/movie.csv', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                next(reader)
+                for row in reader:
+                    m_id = int(row[0])
+                    genres = row[2].split('|') if len(row) > 2 else []
+                    self.movie_genres[m_id] = genres
+        except FileNotFoundError:
+            print("File not found: '../data/movie.csv'")
 
-        # biases
+    def _calculate_biases(self):
         lambda_movie = 7.0
         lambda_user = 5.0
 
@@ -43,7 +57,7 @@ class MySystem(RatingSystem):
 
         self.b_u = {u: s / (len(self.users[u].ratings) + lambda_user) for u, s in user_sums.items()}
 
-        # include genres
+    def _build_genre_profiles(self):
         self.user_genre_profiles = {}
         for u_id, user_obj in self.users.items():
             g_sums = {}
@@ -62,29 +76,16 @@ class MySystem(RatingSystem):
 
             self.user_genre_profiles[u_id] = profile
 
-    def _load_genres(self):
-        self.movie_genres = {}
-        try:
-            with open('../data/movie.csv', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                next(reader)
-                for row in reader:
-                    m_id = int(row[0])
-                    genres = row[2].split('|') if len(row) > 2 else []
-                    self.movie_genres[m_id] = genres
-        except FileNotFoundError:
-            print("File not found: '../data/movie.csv'")
-
     def rate(self, user, movie):
         u_id = user.id
         m_id = movie
 
-        # baseline estimate
+        # based on baseline
         bu = self.b_u.get(u_id, 0.0)
         bi = self.b_i.get(m_id, 0.0)
         baseline_pred = self.global_mean + bu + bi
 
-        # estimate based on genres
+        # based on genres
         movie_genres = self.movie_genres.get(m_id, [])
         user_profile = self.user_genre_profiles.get(u_id, {})
 
@@ -95,7 +96,7 @@ class MySystem(RatingSystem):
             if known_genre_scores:
                 genre_pred = sum(known_genre_scores) / len(known_genre_scores)
 
-        # how much baseline is to be trusted
+        # baseline trust level
         alpha = 0.75
 
         final_prediction = alpha * baseline_pred + (1 - alpha) * genre_pred
