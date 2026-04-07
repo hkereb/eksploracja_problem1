@@ -4,6 +4,8 @@ from tqdm import tqdm
 from RatingSystem import RatingSystem, RatingSystemCompetition
 from SampleSystems import NaiveRating, AverageMovieRating, GlobalAverageMovieRating, Cheater, AverageUserRating
 from system155877 import MySystem as secret
+from system155294 import MySystemPearson
+from systemBaseline import MySystemBaseline
 
 def main():
     #read the movie indices
@@ -30,6 +32,8 @@ def main():
     competition.register(GlobalAverageMovieRating())
     competition.register(Cheater())
     competition.register(AverageUserRating())    
+    competition.register(MySystemBaseline())   
+    competition.register(MySystemPearson())   
     competition.build_round_robin()
     #run the competition - it prints out the results
     competition.compete()
