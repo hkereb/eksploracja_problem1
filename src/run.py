@@ -4,7 +4,7 @@ from tqdm import tqdm
 from RatingSystem import RatingSystem, RatingSystemCompetition
 from SampleSystems import NaiveRating, AverageMovieRating, GlobalAverageMovieRating, Cheater, AverageUserRating
 from system155877 import MySystem as secret
-from system155294 import MySystemPearson
+from system155294 import MySystemAntiCheater
 from systemBaseline import MySystemBaseline
 
 def main():
@@ -33,7 +33,7 @@ def main():
     competition.register(Cheater())
     competition.register(AverageUserRating())    
     competition.register(MySystemBaseline())   
-    competition.register(MySystemPearson())   
+    competition.register(MySystemAntiCheater())   
     competition.build_round_robin()
     #run the competition - it prints out the results
     competition.compete()
